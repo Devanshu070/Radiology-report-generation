@@ -1,0 +1,30 @@
+# Local private datasets used for development and full-pipeline testing
+data/private/
+/train.csv
+/test.csv
+/sample_submission.csv
+**/train.csv
+**/test.csv
+**/sample_submission.csv
+
+# Runtime and generated artifacts
+artifacts/
+outputs/
+*.npy
+*.npz
+*.pt
+*.pth
+*.safetensors
+
+# Secrets and local environments
+.env
+.env.*
+!.env.example
+.venv/
+
+# Notebook and Python caches
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
