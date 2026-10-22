@@ -42,3 +42,17 @@ IMPRESSION:
 ```
 
 The example shows the core challenge: dictated right-sided findings replace conflicting normal template statements, while unchanged cardiomediastinal and osseous findings remain. Laterality and negation are retained, and the impression summarizes the current case.
+
+## Evaluation
+
+The project includes a shared, local RES-style report comparison in [`evaluation/res.py`](evaluation/res.py). It compares a completed report with a reference while accounting for which findings changed from the input template. Lower scores indicate closer text agreement under this implementation.
+
+This repository implements an explicitly defined **RES-style proxy**, not the official RES metric. Its combined score is:
+
+```text
+RES_proxy = 0.65 × Findings_proxy + 0.35 × Impression_proxy
+```
+
+The findings score uses weighted normalized word-edit distances, assigning greater weight to fields changed from the template and penalizing unexpected fields. Negation, laterality, severity, acuity, and measurements receive higher heuristic token weights. See [`docs/evaluation.md`](docs/evaluation.md) for the full formula, scoring details, and limitations.
+
+This proxy supports development and regression testing; it is not clinical validation or evidence of clinical safety. Public tests use synthetic examples and do not require private clinical datasets.
