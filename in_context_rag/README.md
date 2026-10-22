@@ -14,7 +14,7 @@ training columns are `case_id`, `modality`, `body_part`, `study_description`,
 are not included in this repository.
 
 ```python
-from in_context_rag_approach.preprocess import (
+from in_context_rag.preprocess import (
     create_split_manifest,
     load_cases,
     to_prompt_case,
