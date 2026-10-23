@@ -54,9 +54,33 @@ class FewShotPair(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     case_id: str = Field(min_length=1)
+    modality: str = ""
+    body_part: str = ""
+    study_description: str = ""
+    patient_age_band: str = ""
+    patient_sex: str = ""
     dictation: str = Field(min_length=1)
     template_content: str = Field(min_length=1)
     report: str = Field(min_length=1)
+
+
+class GeneratedSections(BaseModel):
+    """Validated model output before it is assembled into a full report."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    findings: str = Field(min_length=1)
+    impression: str = Field(min_length=1)
+
+
+__all__ = [
+    "CaseRecord",
+    "FewShotPair",
+    "GeneratedSections",
+    "PromptCase",
+    "SplitManifest",
+    "TemplateSections",
+]
 
 
 class SplitManifest(BaseModel):

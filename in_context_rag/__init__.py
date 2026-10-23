@@ -1,5 +1,5 @@
 """In-context radiology report completion pipeline."""
 
-from .schemas import CaseRecord, FewShotPair, PromptCase, SplitManifest, TemplateSections
+from .schemas import CaseRecord, FewShotPair, GeneratedSections, PromptCase, SplitManifest, TemplateSections
 
-__all__ = ["CaseRecord", "FewShotPair", "PromptCase", "SplitManifest", "TemplateSections"]
+__all__ = ["CaseRecord", "FewShotPair", "GeneratedSections", "PromptCase", "SplitManifest", "TemplateSections"]

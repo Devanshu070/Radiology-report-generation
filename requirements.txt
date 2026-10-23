@@ -1,1 +1,6 @@
 pydantic>=2.7,<3
+numpy>=1.26
+scikit-learn>=1.4
+sentence-transformers>=3.0
+groq>=0.11
+python-dotenv>=1.0
