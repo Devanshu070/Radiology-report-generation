@@ -1,7 +1,8 @@
-# In-Context RAG preprocessing
+# In-Context RAG
 
-This package owns its own clinical-data loading, template parsing, validation,
-and split logic. It does not share preprocessing with the QLoRA approach.
+This package owns its clinical-data loading, template parsing, validation,
+retrieval, generation, evaluation, and review logic. It does not share
+preprocessing with the QLoRA approach.
 
 ## Local input data
 
@@ -35,5 +36,8 @@ manifest and exact input records must match when constructing that pool.
 
 `to_prompt_case` separates the template's single `FINDINGS` section and single
 `IMPRESSION` section into prompt variables while preserving their text. The
-full generation and retrieval workflow is added in the next In-Context RAG
-implementation stage.
+`in_context_rag.cli` module exposes `prepare`, `retrieve`, `generate`,
+`evaluate`, `review`, and `run` commands. See the root README for the complete
+CLI sequence. Generation sends dictation and selected demonstrations to the
+configured Groq API, so only use appropriately de-identified data with
+authorization for the intended processing.

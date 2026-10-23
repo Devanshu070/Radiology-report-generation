@@ -56,3 +56,33 @@ RES_proxy = 0.65 × Findings_proxy + 0.35 × Impression_proxy
 The findings score uses weighted normalized word-edit distances, assigning greater weight to fields changed from the template and penalizing unexpected fields. Negation, laterality, severity, acuity, and measurements receive higher heuristic token weights. See [`docs/evaluation.md`](docs/evaluation.md) for the full formula, scoring details, and limitations.
 
 This proxy supports development and regression testing; it is not clinical validation or evidence of clinical safety. Public tests use synthetic examples and do not require private clinical datasets.
+
+## In-Context RAG workflow
+
+The `in_context_rag/` package contains an end-to-end local workflow: it selects up to five demonstrations from the training partition, constructs a structured Groq request, validates the response, assembles the completed report, calculates the local RES proxy, and can create an escaped HTML review page.
+
+Install the base dependencies and configure local data and provider credentials:
+
+```bash
+python -m pip install -r requirements.txt
+cp .env.example .env
+# Set GROQ_API_KEY or one or more numbered GROQ_API_KEY_N values in .env.
+# CLINICAL_DATA_ROOT is optional; it defaults to data/private/.
+```
+
+The application loads the ignored root `.env` file without overriding values
+already exported in the shell. It supports a single `GROQ_API_KEY` and the
+numbered `GROQ_API_KEY_1` through `GROQ_API_KEY_10` slots; configured keys are
+rotated between requests. The current pipeline uses Groq only; legacy
+OpenRouter/Ollama settings from earlier experiments are not consumed. Keep
+real credentials in `.env` and never commit them.
+
+Prepare a deterministic split, then run the held-out test workflow and create a review page:
+
+```bash
+python -m in_context_rag.cli prepare
+python -m in_context_rag.cli run --split test --top-k 5
+python -m in_context_rag.cli review
+```
+
+The stages can also be run separately with `retrieve`, `generate`, and `evaluate`. Generated reports, embedding/response caches, split manifests, and review pages are written under ignored `artifacts/`. Before sending any clinical text to a hosted model, confirm that the data is appropriately de-identified and that the intended use is authorized. Model output requires qualified human review and is not a clinical decision.
