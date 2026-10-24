@@ -5,11 +5,18 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_ROOT = REPOSITORY_ROOT / "data" / "private"
 TRAIN_FILENAME = "train.csv"
 CLINICAL_DATA_ROOT_ENV = "CLINICAL_DATA_ROOT"
+
+
+def load_project_environment() -> None:
+    """Load ignored repository-local settings without overriding shell values."""
+    load_dotenv(REPOSITORY_ROOT / ".env", override=False)
 
 
 def clinical_data_root() -> Path:
