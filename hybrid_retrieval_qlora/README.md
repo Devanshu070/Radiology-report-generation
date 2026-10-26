@@ -1,13 +1,13 @@
-# Hybrid Biomedical Retrieval & Embedding Cache
+# Hybrid Biomedical Retrieval & SFT Preprocessing
 
-This package implements the dense semantic retrieval, sliding-window chunk pooling, persistent vector caching, and hybrid ranking engine for **Approach 2 (Retrieval-Assisted QLoRA Fine-Tuning)**.
+This package implements the dense semantic retrieval, sliding-window chunk pooling, persistent vector caching, ChatML formatting, and target-only completion masking for **Approach 2 (Retrieval-Assisted QLoRA Fine-Tuning)**.
 
 > [!NOTE]
-> This branch implements **only** the biomedical retrieval and embedding cache foundation. QLoRA adapter training, completion-loss masking, and SFT tokenization are isolated on the subsequent training branch (`hybrid-retrieval-qlora/qlora-sft-training`).
+> This branch implements the biomedical retrieval/cache foundation and **SFT chat-template formatting / target-only completion masking**. QLoRA adapter training, 4-bit NF4 quantization, and adapter evaluation are isolated on the subsequent training branch (`hybrid-retrieval-qlora/qlora-training-evaluation`).
 
 ---
 
-## Architecture & Mathematical Pooling Formulation
+## Architecture & Data Contracts
 
 ### PubMedBERT Semantic Embeddings
 Dense retrieval uses `NeuML/pubmedbert-base-embeddings` (pinned revision `b79526d6ef3645e0df4530322e266f24c829f5ef`), producing 768-dimensional normalized biomedical vectors.
@@ -34,6 +34,17 @@ Clinical radiology dictations regularly exceed PubMedBERT's 512-token limit. Rat
 - **Self-Retrieval Prevention:** When running retrieval for training queries, self-matches (`query_case_id == candidate_case_id`) are masked with $-\infty$. Distinct cases with identical dictations remain eligible.
 - **Ensemble Scoring:**
   $$\text{Score} = 0.60 \cdot \text{DenseSim} + 0.20 \cdot \text{TF-IDF} + 0.10 \cdot \text{ModalityMatch} + 0.10 \cdot \text{BodyPartMatch}$$
+
+### ChatML SFT Formatting & Whole-Demonstration Budgeting
+- **Model Standard:** Aligned with `Qwen/Qwen2.5-3B-Instruct` ChatML convention (`<|im_start|>role\ncontent<|im_end|>\n`).
+- **Demonstration Budgeting:** Formats multi-turn chat examples (system prompt $\to$ retrieved demonstration turns $\to$ current case input $\to$ reference target report).
+- **No Text Truncation:** If a sequence exceeds the configured sequence length (`max_seq_length = 6144` or `max_input_tokens = 5120`), lowest-ranked demonstration pairs are pruned whole from the end. No clinical findings or reports are truncated.
+
+### Target-Only Completion Masking
+- **Boundary Precision:** Only the assistant target completion tokens (and trailing `<|im_end|>`) receive loss (`completion_mask = 1`, `labels = input_ids`).
+- **Prompt Masking:** System instructions, retrieved demonstration turns, current case inputs, and the assistant generation prompt header (`<|im_start|>assistant\n`) are masked from loss (`completion_mask = 0`, `labels = -100`).
+- **Padding Invariant:** Right-padding tokens have `attention_mask = 0`, `completion_mask = 0`, and `labels = -100`.
+- **Length Alignment:** `input_ids`, `attention_mask`, `completion_mask`, and `labels` arrays strictly maintain equal length.
 
 ---
 
@@ -70,7 +81,7 @@ python -m hybrid_retrieval_qlora.cli retrieve \
 ---
 
 ## Testing & Offline Injectability
-All unit tests run offline without network access or downloading model weights:
+All unit tests run completely offline with synthetic fixtures and zero model weight downloads using `MockQwenTokenizer`:
 
 ```bash
 python -m unittest discover tests
