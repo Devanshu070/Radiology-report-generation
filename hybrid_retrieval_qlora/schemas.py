@@ -77,3 +77,41 @@ class SplitManifest(BaseModel):
     def test_ids(self) -> set[str]:
         """Set of case IDs designated as test examples."""
         return {case_id for case_id, split in self.assignments.items() if split == "test"}
+
+
+class ChatMessage(BaseModel):
+    """A single turn in a multi-turn chat conversation."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    role: Literal["system", "user", "assistant"]
+    content: str = Field(min_length=1)
+
+
+class FormattedSFTExample(BaseModel):
+    """An SFT training or evaluation example structured into prompt and target completion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    prompt_messages: list[ChatMessage] = Field(min_length=1)
+    completion_message: ChatMessage | None = None
+    demonstration_ids: list[str] = Field(default_factory=list)
+
+    @property
+    def all_messages(self) -> list[ChatMessage]:
+        if self.completion_message is not None:
+            return [*self.prompt_messages, self.completion_message]
+        return list(self.prompt_messages)
+
+
+class TokenizedSFTRecord(BaseModel):
+    """Aligned token arrays for supervised fine-tuning with masked loss."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    input_ids: list[int]
+    attention_mask: list[int]
+    completion_mask: list[int]
+    labels: list[int]

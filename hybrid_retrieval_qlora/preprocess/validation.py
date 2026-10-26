@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..schemas import ClinicalCase
+from ..schemas import ClinicalCase, TokenizedSFTRecord
 
 
 REQUIRED_CASE_FIELDS = {
@@ -62,3 +62,72 @@ def validate_cases(records: list[dict[str, Any]], *, require_report: bool = Fals
         validated.append(case)
 
     return validated
+
+
+def validate_tokenized_sft_record(record: TokenizedSFTRecord | dict[str, Any]) -> TokenizedSFTRecord:
+    """Validate aligned token arrays and masked-loss boundaries for an SFT record.
+
+    Ensures:
+      - ``input_ids``, ``attention_mask``, ``completion_mask``, and ``labels`` have identical length.
+      - Binary masks contain only 0 and 1.
+      - Supervised positions (completion_mask == 1) have attention_mask == 1 and labels == input_ids.
+      - Prompt and padding positions (completion_mask == 0 or attention_mask == 0) have labels == -100.
+
+    Raises:
+        ValueError: If any array length or loss boundary invariant is violated.
+    """
+    rec = record if isinstance(record, TokenizedSFTRecord) else TokenizedSFTRecord.model_validate(record)
+
+    n_tokens = len(rec.input_ids)
+    if n_tokens == 0:
+        raise ValueError(f"Tokenized record for case '{rec.case_id}' contains empty input_ids.")
+
+    if len(rec.attention_mask) != n_tokens:
+        raise ValueError(
+            f"Case '{rec.case_id}' length mismatch: input_ids={n_tokens} vs attention_mask={len(rec.attention_mask)}"
+        )
+    if len(rec.completion_mask) != n_tokens:
+        raise ValueError(
+            f"Case '{rec.case_id}' length mismatch: input_ids={n_tokens} vs completion_mask={len(rec.completion_mask)}"
+        )
+    if len(rec.labels) != n_tokens:
+        raise ValueError(
+            f"Case '{rec.case_id}' length mismatch: input_ids={n_tokens} vs labels={len(rec.labels)}"
+        )
+
+    for i in range(n_tokens):
+        att = rec.attention_mask[i]
+        comp = rec.completion_mask[i]
+        label = rec.labels[i]
+        tok = rec.input_ids[i]
+
+        if att not in (0, 1):
+            raise ValueError(f"Case '{rec.case_id}' invalid attention_mask value at index {i}: {att}")
+        if comp not in (0, 1):
+            raise ValueError(f"Case '{rec.case_id}' invalid completion_mask value at index {i}: {comp}")
+
+        # Padding tokens must have attention_mask=0, completion_mask=0, labels=-100
+        if att == 0:
+            if comp != 0:
+                raise ValueError(
+                    f"Case '{rec.case_id}' index {i}: padding token (attention_mask=0) has completion_mask=1"
+                )
+            if label != -100:
+                raise ValueError(
+                    f"Case '{rec.case_id}' index {i}: padding token (attention_mask=0) has label={label} (expected -100)"
+                )
+            continue
+
+        # Active tokens (att == 1)
+        if comp == 1:
+            if label != tok:
+                raise ValueError(
+                    f"Case '{rec.case_id}' index {i}: completion token has label={label} but input_id={tok}"
+                )
+        else:
+            if label != -100:
+                raise ValueError(
+                    f"Case '{rec.case_id}' index {i}: unmasked prompt token has label={label} (expected -100)"
+                )
+
+    return rec
