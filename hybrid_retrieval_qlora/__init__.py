@@ -13,7 +13,20 @@ from .config import (
     DEFAULT_WEIGHTS,
     EXPECTED_EMBEDDING_DIM,
 )
+from .preprocess.chat_formatting import (
+    build_chat_messages,
+    extract_template_sections,
+    format_case_input_payload,
+    format_sft_example,
+)
+from .preprocess.completion_mask import (
+    MockQwenTokenizer,
+    get_qwen_tokenizer,
+    tokenize_sft_dataset,
+    tokenize_sft_example,
+)
 from .preprocess.load_data import create_deterministic_splits, filter_training_pool, load_cases
+from .preprocess.validation import validate_tokenized_sft_record
 from .retrieval.cache_manifest import EmbeddingCacheManager, EmbeddingSpec
 from .retrieval.chunk_pooling import (
     aggregate_chunk_vectors,
@@ -22,9 +35,19 @@ from .retrieval.chunk_pooling import (
 )
 from .retrieval.hybrid_retriever import HybridRetriever
 from .retrieval.pubmedbert_embeddings import PubMedBERTEmbedder
-from .schemas import ClinicalCase, RetrievalCandidate, RetrievalResult, SplitManifest
+from .schemas import (
+    ChatMessage,
+    ClinicalCase,
+    FormattedSFTExample,
+    RetrievalCandidate,
+    RetrievalResult,
+    SplitManifest,
+    TokenizedSFTRecord,
+)
 
 __all__ = [
+    "ChatMessage",
+    "ClinicalCase",
     "DEFAULT_BATCH_SIZE",
     "DEFAULT_CACHE_DIR",
     "DEFAULT_CHUNK_OVERLAP",
@@ -34,18 +57,28 @@ __all__ = [
     "DEFAULT_TOP_K",
     "DEFAULT_WEIGHTS",
     "EXPECTED_EMBEDDING_DIM",
-    "ClinicalCase",
     "EmbeddingCacheManager",
     "EmbeddingSpec",
+    "FormattedSFTExample",
     "HybridRetriever",
+    "MockQwenTokenizer",
     "PubMedBERTEmbedder",
     "RetrievalCandidate",
     "RetrievalResult",
     "SplitManifest",
+    "TokenizedSFTRecord",
     "aggregate_chunk_vectors",
+    "build_chat_messages",
     "compute_chunk_weights",
     "create_deterministic_splits",
+    "extract_template_sections",
     "filter_training_pool",
+    "format_case_input_payload",
+    "format_sft_example",
+    "get_qwen_tokenizer",
     "load_cases",
+    "tokenize_sft_dataset",
+    "tokenize_sft_example",
     "validate_embedding_matrix",
+    "validate_tokenized_sft_record",
 ]

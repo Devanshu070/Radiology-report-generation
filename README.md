@@ -87,12 +87,12 @@ python -m in_context_rag.cli review
 
 The stages can also be run separately with `retrieve`, `generate`, and `evaluate`. Generated reports, embedding/response caches, split manifests, and review pages are written under ignored `artifacts/`. Before sending any clinical text to a hosted model, confirm that the data is appropriately de-identified and that the intended use is authorized. Model output requires qualified human review and is not a clinical decision.
 
-## Approach 2: Biomedical Retrieval & Embedding Cache
+## Approach 2: Biomedical Retrieval & SFT Preprocessing
 
-The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval and persistent vector cache foundation for Approach 2.
+The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval, persistent vector cache, ChatML formatting, and target-only completion masking for Approach 2.
 
 > [!NOTE]
-> This branch implements **only** the biomedical retrieval and embedding cache components. Target-only completion loss masking, SFT tokenization, and QLoRA adapter training are isolated on the planned training branch (`hybrid-retrieval-qlora/qlora-sft-training`).
+> This branch implements the biomedical retrieval/cache foundation and **SFT chat-template formatting / target-only completion masking**. QLoRA adapter training, 4-bit NF4 quantization, and evaluation are isolated on the planned training branch (`hybrid-retrieval-qlora/qlora-training-evaluation`).
 
 ### Retrieval & Cache Architecture
 
@@ -102,6 +102,13 @@ The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval an
 - **Leakage Prevention & Self-Masking:** The candidate pool strictly admits labeled training examples. Training queries are masked from retrieving themselves, while identical dictation texts from separate cases remain eligible.
 - **Hybrid Linear Ensemble:** Ranks candidates by:
   $$\text{Score} = 0.60 \cdot \text{DenseSim} + 0.20 \cdot \text{TF-IDF} + 0.10 \cdot \text{ModalityMatch} + 0.10 \cdot \text{BodyPartMatch}$$
+
+### ChatML Formatting & Target-Only Completion Masking
+
+- **Qwen ChatML Standard:** Formats multi-turn chat examples using `<|im_start|>role\ncontent<|im_end|>\n` turns, with generation prompt `<|im_start|>assistant\n`.
+- **Demonstration Budgeting:** Lowest-ranked demonstrations are pruned whole from the end if the example exceeds sequence limits (`max_seq_length = 6144`), preserving complete clinical reports without truncation.
+- **Loss Masking Invariant:** Loss is applied strictly to assistant target completion tokens (`completion_mask = 1`, `labels = input_ids`). System instructions, demonstration turns, current case inputs, assistant generation headers, and padding tokens are masked (`completion_mask = 0`, `labels = -100`).
+- **Offline Validation:** Public unit tests execute offline without downloading model weights using mock ChatML tokenizers.
 
 ### Running Retrieval & Cache Management Locally
 
