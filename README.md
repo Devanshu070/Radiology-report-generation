@@ -87,12 +87,9 @@ python -m in_context_rag.cli review
 
 The stages can also be run separately with `retrieve`, `generate`, and `evaluate`. Generated reports, embedding/response caches, split manifests, and review pages are written under ignored `artifacts/`. Before sending any clinical text to a hosted model, confirm that the data is appropriately de-identified and that the intended use is authorized. Model output requires qualified human review and is not a clinical decision.
 
-## Approach 2: Biomedical Retrieval & SFT Preprocessing
+## Approach 2: Biomedical Retrieval + QLoRA Fine-Tuning
 
-The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval, persistent vector cache, ChatML formatting, and target-only completion masking for Approach 2.
-
-> [!NOTE]
-> This branch implements the biomedical retrieval/cache foundation and **SFT chat-template formatting / target-only completion masking**. QLoRA adapter training, 4-bit NF4 quantization, and evaluation are isolated on the planned training branch (`hybrid-retrieval-qlora/qlora-training-evaluation`).
+The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval, persistent vector cache, ChatML formatting, target-only completion masking, 4-bit NF4 QLoRA fine-tuning of `Qwen/Qwen2.5-3B-Instruct`, adapter inference, and clinically weighted RES evaluation for Approach 2.
 
 ### Retrieval & Cache Architecture
 
@@ -109,6 +106,14 @@ The `hybrid_retrieval_qlora/` package implements the dense semantic retrieval, p
 - **Demonstration Budgeting:** Lowest-ranked demonstrations are pruned whole from the end if the example exceeds sequence limits (`max_seq_length = 6144`), preserving complete clinical reports without truncation.
 - **Loss Masking Invariant:** Loss is applied strictly to assistant target completion tokens (`completion_mask = 1`, `labels = input_ids`). System instructions, demonstration turns, current case inputs, assistant generation headers, and padding tokens are masked (`completion_mask = 0`, `labels = -100`).
 - **Offline Validation:** Public unit tests execute offline without downloading model weights using mock ChatML tokenizers.
+
+### 4-bit NF4 QLoRA Fine-Tuning & RES Evaluation
+
+- **Model Specification:** `Qwen/Qwen2.5-3B-Instruct` loaded in 4-bit NormalFloat4 (NF4) with double quantization.
+- **Adapter Parameters:** PEFT LoRA with rank $r=16$, $\alpha=32$, dropout $0.05$, adapting all linear projection layers.
+- **SFT Training:** TRL `SFTTrainer` configured for completion-only loss, paged AdamW 8-bit optimizer, cosine learning rate schedule (`1e-4`), gradient accumulation steps $8$, and checkpointing.
+- **Inference & Evaluation:** Greedy continuation generation (`do_sample=False`, `max_new_tokens=2048`) scored via the canonical clinically weighted RES metric in [`evaluation/res.py`](evaluation/res.py).
+- **Interactive Notebook:** The full runnable pipeline is demonstrated in [`hybrid_retrieval_qlora/notebook.ipynb`](hybrid_retrieval_qlora/notebook.ipynb).
 
 ### Running Retrieval & Cache Management Locally
 
