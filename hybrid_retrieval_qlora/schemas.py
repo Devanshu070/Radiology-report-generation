@@ -115,3 +115,46 @@ class TokenizedSFTRecord(BaseModel):
     attention_mask: list[int]
     completion_mask: list[int]
     labels: list[int]
+
+
+class GenerationResult(BaseModel):
+    """Output from adapter-based or baseline report generation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    variant: str = Field(min_length=1)
+    generated_report: str = ""
+    status: Literal["success", "failed"] = "success"
+    error: str = ""
+    generated_tokens: int = 0
+
+
+class EvaluationScore(BaseModel):
+    """Case-level scoring results computed with the canonical RES metric."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1)
+    variant: str = Field(min_length=1)
+    status: str = "success"
+    generated_report: str = ""
+    expected_report: str = ""
+    res_proxy: float = Field(ge=0.0, le=1.0)
+    findings_proxy: float = Field(ge=0.0, le=1.0)
+    impression_proxy: float = Field(ge=0.0, le=1.0)
+    error: str = ""
+    scoring_error: str = ""
+
+
+class EvaluationSummary(BaseModel):
+    """Aggregate evaluation metrics across a dataset."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    variant: str
+    total_cases: int
+    successful_cases: int
+    mean_res_proxy: float
+    mean_findings_proxy: float
+    mean_impression_proxy: float
