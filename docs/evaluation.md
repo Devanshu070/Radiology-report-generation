@@ -1,6 +1,6 @@
 # Report evaluation
 
-The repository's shared evaluator is `evaluation/res.py`. It provides a local, RES-style text comparison for comparing a generated report with a reference report while giving higher heuristic weight to findings changed from the supplied template and to clinically meaningful tokens.
+The repository's shared evaluator is [`evaluation/res.py`](../evaluation/res.py). It provides a local, RES-style text comparison for comparing a generated report with a reference report while giving higher heuristic weight to findings changed from the supplied template and to clinically meaningful tokens.
 
 This implementation is an approximation. It is not an official scorer, a clinical validation method, or evidence that generated reports are safe for clinical use. Lower scores indicate closer textual agreement under this implementation.
 
@@ -54,4 +54,4 @@ The token list, field grammar, parent-heading inference, unit aliases, and weigh
 
 ## Usage in the project
 
-Both report-generation approaches should call this module for local evaluation rather than maintaining separate scorer copies. Keep evaluation examples synthetic. Report aggregate scores alongside failure counts and clinician review; do not present proxy scores alone as evidence of clinical performance.
+Both report-generation workflows call this module for local evaluation rather than maintaining separate scorer copies. Keep evaluation examples synthetic. Report aggregate scores alongside failure counts and clinician review; do not present proxy scores alone as evidence of clinical performance.
